@@ -220,7 +220,26 @@ hr {
     box-shadow: 0 4px 30px rgba(0, 0, 0, .25);
     color: #fff;
     font-weight: 500;
-    font-size: 18px
+    font-size: 18px;
+}
+
+.less {
+    display: block;
+    width: 180px;
+    height: 40px;
+    margin: 0 auto;
+    margin-bottom:30px;
+    border: none;
+    outline: 0;
+    cursor: pointer;
+    background-color: #ec2027;
+    border-radius: 4px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, .25);
+    color: #fff;
+    font-weight: 500;
+    font-size: 18px;
+    opacity:0;
+    transition: 1s;
 }
 
 .more:focus {
