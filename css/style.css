@@ -138,6 +138,11 @@ body.night {
     transition: all .4s ease
 }
 
+#suggested {
+    font-weight: bold;
+    margin: 0 45px 30px 45px;
+}
+
 .header__item {
     display: flex;
     align-items: center;

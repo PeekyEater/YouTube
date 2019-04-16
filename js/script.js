@@ -99,22 +99,21 @@ function createVideo() {
         width: '100%',
         videoId: 'M7lc1UVf-VE',
       });
-   }, 300);
-
+   }, 500);
 }
 
 function loadVideo(id) {
     player.loadVideoById({'videoId': `${id}`});
 }
 
-function start() {
+function start(number = 9) {
     gapi.client.init({
         'apiKey': 'AIzaSyB03ygVmuojHox1yYAZUz8l2FZA9gwt7TI',
         'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
     }).then(function(){
         return gapi.client.youtube.playlistItems.list({
             "part": "snippet,contentDetails",
-            "maxResults": '9',
+            "maxResults": `${number}`,
             "playlistId": "PLnOieOP_Tjow38LqU7FfgvSQ5_g5qnnWA" 
         });
     }).then(function(response){
@@ -129,7 +128,7 @@ function start() {
                     ${item.snippet.title}
                 </div>
                 <div class="videos__item-views">
-                    2.7 тыс. просмотров?
+                    loading...
                 </div>
             `;
             videosWrapper.appendChild(card);
@@ -139,11 +138,96 @@ function start() {
                 card.querySelector('.videos__item-descr').style.color = '#fff';
                 card.querySelector('.videos__item-views').style.color = '#fff';
             }
+            setViewCount(card,item.contentDetails.videoId);
         });
         sliceTitle('.videos__item-descr', 100);
         bindModal(document.querySelectorAll('.videos__item'));
     }).catch(e => {
         console.log(e);
+    });
+}
+
+function search(target) {
+    if(document.getElementById('suggested')) document.getElementById('suggested').remove();
+    gapi.client.init({
+        'apiKey': 'AIzaSyB03ygVmuojHox1yYAZUz8l2FZA9gwt7TI',
+        'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+    }).then(function() {
+        return gapi.client.youtube.search.list({
+            'maxResults': '6',
+            'part': 'snippet',
+            'q': `${target}`,
+            'type': ''
+        });
+    }).then(function (response) {
+        const videosWrapper = document.querySelector('.videos__wrapper');
+        console.log(response.result);
+        while(videosWrapper.firstChild){
+            videosWrapper.removeChild(videosWrapper.firstChild);
+        }
+        response.result.items.forEach(item => {
+            let card = document.createElement('a');
+            card.classList.add('videos__item', 'videos__item-active');
+            card.setAttribute('data-url', item.id.videoId);
+            card.innerHTML = `
+                <img src="${item.snippet.thumbnails.high.url}" alt="thumb">
+                <div class="videos__item-descr">
+                    ${item.snippet.title}
+                </div>
+                <div class="videos__item-views">
+                    loading...
+                </div>
+            `;
+            videosWrapper.appendChild(card);
+            setTimeout(() => {
+                card.classList.remove('videos__item-active');}, 10);
+            if(document.body.classList.contains('night')) {
+                card.querySelector('.videos__item-descr').style.color = '#fff';
+                card.querySelector('.videos__item-views').style.color = '#fff';
+            }
+            setViewCount(card,item.id.videoId);
+        });
+        sliceTitle('.videos__item-descr', 100);
+        bindModal(document.querySelectorAll('.videos__item'));
+    });
+}
+
+function addLess(parent) {
+    if(document.getElementById('less')){
+        return ;
+    }
+    let less = document.createElement('button');
+    less.classList.add('less');
+    less.id = 'less';
+    less.innerHTML = 'Show less';
+    parent.appendChild(less);
+    less.addEventListener('click', () => {
+        const videosWrapper = document.querySelector('.videos__wrapper');
+        document.querySelector('.less').remove();
+        while( videosWrapper.firstChild ) {
+            videosWrapper.removeChild(videosWrapper.firstChild);
+        }
+        setTimeout( () => {
+        more.style.display = 'block';
+        }, 0);
+    });
+    more.style.display = 'none';
+    setTimeout( () => {
+    less.style.opacity = '1';
+    }, 1000);
+}
+
+function setViewCount(item, targetID){
+    gapi.client.init({
+        'apiKey': 'AIzaSyB03ygVmuojHox1yYAZUz8l2FZA9gwt7TI',
+        'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+    }).then(function() {
+        return gapi.client.youtube.videos.list({
+            'part': 'statistics',
+            'id': `${targetID}`
+        });
+    }).then(function (response) {
+        item.querySelector('.videos__item-views').innerHTML = `${response.result.items[0].statistics.viewCount} people wached this video`;
     });
 }
 
@@ -166,25 +250,24 @@ document.addEventListener('keydown', (e) => {
 });
 
 more.addEventListener('click', () => {
-    let less = document.createElement('button');
-    less.classList.add('less');
-    less.innerHTML = 'Show less';
-    document.querySelector('.videos').appendChild(less);
-    less.addEventListener('click', () => {
-        const videosWrapper = document.querySelector('.videos__wrapper');
-        document.querySelector('.less').remove();
-        while( videosWrapper.firstChild ) {
-            videosWrapper.removeChild(videosWrapper.firstChild);
-        }
-        setTimeout( () => {
-        more.style.display = 'block';
-        }, 0);
-    });
-    more.style.display = 'none';
-    setTimeout( () => {
-    less.style.opacity = '1';
-    }, 1000);
+    const videosWrapper = document.querySelector('.videos__wrapper');
+    while(videosWrapper.firstChild){
+        videosWrapper.removeChild(videosWrapper.firstChild);
+    }
+    addLess(document.querySelector('.videos'));
     gapi.load('client', start);
 });
 
 createVideo();
+
+document.querySelector('.search').addEventListener('submit', (e) => {
+    e.preventDefault();
+    gapi.load('client', () => {search(document.querySelector('.search > input').value);});
+    document.querySelector('.search > input').value = '';
+    addLess(document.querySelector('.videos'));
+});
+
+(() => {
+    gapi.load('client', () => {start(3);});
+})();
+
